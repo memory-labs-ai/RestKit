@@ -127,6 +127,15 @@ static NSString * AFRKPercentEscapedQueryStringValueFromStringWithEncoding(NSStr
     }
 }
 
+
+- (NSString *)CERStringValue {
+    if (!self.value || [self.value isEqual:[NSNull null]]) {
+        return [self.field description];
+    } else {
+        return [NSString stringWithFormat:@"%@=%@", [self.field description], [self.value description]];
+    }
+}
+
 @end
 
 #pragma mark -
@@ -462,6 +471,17 @@ static void AFRKNetworkReachabilityReleaseCallback(const void *info) {
 
 #pragma mark -
 
+
+NSString * CERQueryStringFromParametersWithEncoding(NSDictionary *parameters, NSStringEncoding stringEncoding) {
+    NSMutableArray *mutablePairs = [NSMutableArray array];
+    for (AFRKQueryStringPair *pair in AFRKQueryStringPairsFromDictionary(parameters)) {
+        [mutablePairs addObject:[pair CERStringValue]];
+    }
+
+    return [mutablePairs componentsJoinedByString:@"&"];
+}
+
+
 - (NSMutableURLRequest *)requestWithMethod:(NSString *)method
                                       path:(NSString *)path
                                 parameters:(NSDictionary *)parameters
@@ -479,7 +499,7 @@ static void AFRKNetworkReachabilityReleaseCallback(const void *info) {
 
     if (parameters) {
         if ([method isEqualToString:@"GET"] || [method isEqualToString:@"HEAD"] || [method isEqualToString:@"DELETE"]) {
-            url = [NSURL URLWithString:[[url absoluteString] stringByAppendingFormat:[path rangeOfString:@"?"].location == NSNotFound ? @"?%@" : @"&%@", AFRKQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)]];
+            url = [NSURL URLWithString:[[url absoluteString] stringByAppendingFormat:[path rangeOfString:@"?"].location == NSNotFound ? @"?%@" : @"&%@", CERQueryStringFromParametersWithEncoding(parameters, self.stringEncoding)]];
             [request setURL:url];
         } else {
             NSString *charset = (__bridge NSString *)CFStringConvertEncodingToIANACharSetName(CFStringConvertNSStringEncodingToEncoding(self.stringEncoding));
